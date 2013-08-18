@@ -7,11 +7,12 @@
     public class HwndKeyEventArgs : EventArgs
     {
         public Key Key;
-        //public Key Modifier;
+        public ModifierKeys Modifier;
 
-        public HwndKeyEventArgs(Key key)
+        public HwndKeyEventArgs(Key key, ModifierKeys modifier)
         {
             this.Key = key;
+            this.Modifier = modifier;
         }
     }
 }

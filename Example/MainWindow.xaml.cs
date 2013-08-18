@@ -48,7 +48,7 @@ namespace Example
 
         void XnaHost_Draw(object sender, XnaWPF.GraphicsDeviceEventArgs e)
         {
-            this.Title = XnaHost.IsFocused.ToString();
+            this.Title = "XnaHost HasFocus: " + XnaHost.HwndIsFocused.ToString();
             e.GraphicsDevice.Clear(Color.CornflowerBlue);
             spriteBatch.Begin();
             spriteBatch.Draw(texture, new Microsoft.Xna.Framework.Rectangle((int)position.X, (int)position.Y, 200, 100), Color.White);
@@ -58,14 +58,14 @@ namespace Example
         private void XnaHost_HwndKeyDown(object sender, HwndKeyEventArgs e)
         {
             // Key.Left and Key.Right, changes focus
-
             float speed = 10;
 
             if (e.Key == Key.W)
                 position.Y -= speed;
             else if (e.Key == Key.S)
                 position.Y += speed;
-            else if (e.Key == Key.A)
+            
+            if (e.Key == Key.A)
                 position.X -= speed;
             else if (e.Key == Key.D)
                 position.X += speed;

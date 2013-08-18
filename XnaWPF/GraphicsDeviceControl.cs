@@ -16,6 +16,11 @@
         public GraphicsDevice GraphicsDevice { get { return graphicsService.GraphicsDevice; } }
         public ServiceContainer Services { get { return services; } }
 
+        public bool HwndIsFocused
+        {
+            get { return (NativeMethods.GetFocus() == hWnd); }
+        }
+
         #endregion
 
         #region Fields
@@ -66,8 +71,11 @@
         public event EventHandler<HwndMouseEventArgs> HwndMouseX2ButtonUp;
         public event EventHandler<HwndMouseEventArgs> HwndMouseX2ButtonDblClick;
 
-        public event EventHandler<HwndKeyEventArgs> HwndKeyUp;
         public event EventHandler<HwndKeyEventArgs> HwndKeyDown;
+        public event EventHandler<HwndKeyEventArgs> HwndKeyUp;
+
+        public event EventHandler<KeyEventArgs> xKeyDown;
+        public event EventHandler<KeyEventArgs> xKeyUp;
 
         #endregion
 
@@ -234,7 +242,36 @@
         protected override bool TabIntoCore(TraversalRequest request)
         {
             return (NativeMethods.SetFocus(hWnd) != hWnd);
-            //return base.TabIntoCore(request);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (xKeyDown != null)
+                xKeyDown(this, e);
+            base.OnKeyDown(e);
+        }
+        protected override void OnKeyUp(KeyEventArgs e)
+        {
+            if (xKeyUp != null)
+                xKeyUp(this, e);
+            base.OnKeyUp(e);
+        }
+        
+        protected override bool TranslateAcceleratorCore(ref MSG msg, ModifierKeys modifiers)
+        {
+            if (msg.message == NativeMethods.WM_KEYDOWN)
+            {
+                var keyDown = (Key)KeyInterop.KeyFromVirtualKey(msg.wParam.ToInt32());
+                if (HwndKeyDown != null)
+                    HwndKeyDown(this, new HwndKeyEventArgs(keyDown, modifiers));
+            }
+            else if (msg.message == NativeMethods.WM_KEYDOWN)
+            {
+                var keyUp = (Key)KeyInterop.KeyFromVirtualKey(msg.wParam.ToInt32());
+                if (HwndKeyUp != null)
+                    HwndKeyUp(this, new HwndKeyEventArgs(keyUp, modifiers));
+            }
+            return base.TranslateAcceleratorCore(ref msg, modifiers);
         }
 
         protected override HandleRef BuildWindowCore(HandleRef hwndParent)
@@ -437,15 +474,15 @@
 
                 #region Key
                 case NativeMethods.WM_KEYDOWN:
-                    var keyDown = (Key)KeyInterop.KeyFromVirtualKey(wParam.ToInt32());
-                    if (HwndKeyDown != null)
-                        HwndKeyDown(this, new HwndKeyEventArgs(keyDown));
+                    //var keyDown = (Key)KeyInterop.KeyFromVirtualKey(wParam.ToInt32());
+                    //if (HwndKeyDown != null)
+                    //    HwndKeyDown(this, new HwndKeyEventArgs(keyDown));
                     break;
 
                 case NativeMethods.WM_KEYUP:
-                    var keyUp = (Key)KeyInterop.KeyFromVirtualKey(wParam.ToInt32());
-                    if (HwndKeyUp != null)
-                        HwndKeyUp(this, new HwndKeyEventArgs(keyUp));
+                    //var keyUp = (Key)KeyInterop.KeyFromVirtualKey(wParam.ToInt32());
+                    //if (HwndKeyUp != null)
+                    //    HwndKeyUp(this, new HwndKeyEventArgs(keyUp));
                     break;
                 #endregion
 

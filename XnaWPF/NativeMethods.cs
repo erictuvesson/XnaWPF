@@ -137,6 +137,9 @@ namespace XnaWPF
         public static extern int ScreenToClient(IntPtr hWnd, ref POINT pt);
 
         [DllImport("user32.dll")]
+        public static extern IntPtr GetFocus();
+
+        [DllImport("user32.dll")]
         public static extern IntPtr SetFocus(IntPtr hWnd);
 
         #endregion
