@@ -10,8 +10,13 @@ namespace XnaWPF
     {
         #region Constants
 
+        // http://msdn.microsoft.com/en-us/library/windows/desktop/ff700542(v=vs.85).aspx
+
         public const int WS_CHILD           = 0x40000000;
         public const int WS_VISIBLE         = 0x10000000;
+        public const int WS_TABSTOP         = 0x00010000;
+
+        public const int WS_EX_ACCEPTFILES  = 0x00000010;
 
         public const int WM_MOUSEMOVE       = 0x0200;
         public const int WM_LBUTTONDOWN     = 0x0201;
@@ -30,11 +35,12 @@ namespace XnaWPF
         public const int WM_XBUTTONDBLCLK   = 0x020D;
         public const int WM_MOUSELEAVE      = 0x02A3;
         
-        public const int WM_HSCROLL         = 0x114;
-        public const int WM_VSCROLL         = 0x115;
-
         public const int MK_XBUTTON1        = 0x020;
         public const int MK_XBUTTON2        = 0x040;
+
+        public const int WM_KEYDOWN         = 0x100;
+        public const int WM_KEYUP           = 0x101;
+        public const int WM_CHAR            = 0x102;
 
         public const int IDC_ARROW          = 32512;
 
@@ -129,6 +135,9 @@ namespace XnaWPF
 
         [DllImport("user32.dll")]
         public static extern int ScreenToClient(IntPtr hWnd, ref POINT pt);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr SetFocus(IntPtr hWnd);
 
         #endregion
 
