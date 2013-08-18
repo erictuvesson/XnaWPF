@@ -1,0 +1,9 @@
+﻿<Window x:Class="Example.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:xnaWpf="clr-namespace:XnaWPF;assembly=XnaWPF"
+        Title="MainWindow" Height="350" Width="525">
+    <Grid>
+        <xnaWpf:GraphicsDeviceControl Name="XnaHost" />
+    </Grid>
+</Window>
