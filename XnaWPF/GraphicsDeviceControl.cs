@@ -44,8 +44,8 @@
 
         #region Events
 
-        public event EventHandler<GraphicsDeviceEventArgs> LoadContent;
-        public event EventHandler<GraphicsDeviceEventArgs> Draw;
+        public event EventHandler<GraphicsDeviceEventArgs> OnLoadContent;
+        public event EventHandler<GraphicsDeviceEventArgs> OnDraw;
 
         // TODO: X1 & X2 is not counted in MouseDown/Up
         public event EventHandler<HwndMouseEventArgs> HwndMouseDown;
@@ -137,6 +137,20 @@
 
         #endregion
 
+        #region Virtual Methods
+
+        protected virtual void LoadContent()
+        {
+
+        }
+
+        protected virtual void Draw()
+        {
+
+        }
+
+        #endregion
+
         #region Graphics Device Control Implementation
 
         void CompositionTarget_Rendering(object sender, EventArgs e)
@@ -159,8 +173,9 @@
             Viewport viewport = new Viewport(0, 0, width, height);
             graphicsService.GraphicsDevice.Viewport = viewport;
 
-            if (Draw != null)
-                Draw(this, new GraphicsDeviceEventArgs(graphicsService.GraphicsDevice));
+            Draw();
+            if (OnDraw != null)
+                OnDraw(this, new GraphicsDeviceEventArgs(graphicsService.GraphicsDevice));
 
             graphicsService.GraphicsDevice.Present(viewport.Bounds, null, hWnd);
         }
@@ -172,8 +187,9 @@
                 graphicsService = GraphicsDeviceService.AddRef(hWnd, (int)ActualWidth, (int)ActualHeight);
                 services.AddService<IGraphicsDeviceService>(graphicsService);
 
-                if (LoadContent != null)
-                    LoadContent(this, new GraphicsDeviceEventArgs(graphicsService.GraphicsDevice));
+                LoadContent();
+                if (OnLoadContent != null)
+                    OnLoadContent(this, new GraphicsDeviceEventArgs(graphicsService.GraphicsDevice));
             }
         }
 
