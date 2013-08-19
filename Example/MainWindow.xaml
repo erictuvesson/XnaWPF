@@ -4,10 +4,38 @@
         xmlns:local="clr-namespace:Example"
         Title="MainWindow" Height="350" Width="525">
     <Grid>
-        <local:Game1 x:Name="XnaHost" Margin="100,0,0,0" />
-        
-        <Button Content="Button" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="85"/>
-        <TextBox HorizontalAlignment="Left" Height="23" Margin="10,37,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="85"/>
-    
+        <Grid.RowDefinitions>
+            <RowDefinition Height="170*"/>
+            <RowDefinition Height="132*"/>
+            <RowDefinition Height="21*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="101*"/>
+            <ColumnDefinition Width="417*"/>
+        </Grid.ColumnDefinitions>
+
+        <local:Game1 x:Name="XnaHost" Grid.Column="1" Grid.RowSpan="3" />
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="80*"/>
+                <RowDefinition Height="20*"/>
+            </Grid.RowDefinitions>
+
+            <Slider Name="Slider1" Orientation="Vertical" Grid.Row="0" Grid.Column="0" Maximum="255" HorizontalAlignment="Center" ValueChanged="Slider_ValueChanged" />
+            <Slider Name="Slider2" Orientation="Vertical" Grid.Row="0" Grid.Column="1" Maximum="255" HorizontalAlignment="Center" ValueChanged="Slider_ValueChanged" />
+            <Slider Name="Slider3" Orientation="Vertical" Grid.Row="0" Grid.Column="2" Maximum="255" HorizontalAlignment="Center" ValueChanged="Slider_ValueChanged" />
+
+            <TextBlock Text="Red" Foreground="Red" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <TextBlock Text="Green" Foreground="Green" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <TextBlock Text="Blue" Foreground="Blue" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+        </Grid>
+        <Button Content="Load Texture" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"  />
     </Grid>
 </Window>

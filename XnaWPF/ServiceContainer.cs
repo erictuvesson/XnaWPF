@@ -16,6 +16,14 @@ namespace XnaWPF
         }
 
         /// <summary>
+        /// Remove a service
+        /// </summary>
+        public bool RemoveService<T>()
+        {
+            return services.Remove(typeof(T));
+        }
+
+        /// <summary>
         /// Looks up the specified service.
         /// </summary>
         public object GetService(Type serviceType)

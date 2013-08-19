@@ -2,6 +2,7 @@
 {
     using System;
     using System.ComponentModel.Design;
+    using System.Diagnostics;
     using System.Runtime.InteropServices;
     using System.Windows;
     using System.Windows.Input;
@@ -29,7 +30,7 @@
         private IntPtr hWnd;
 
         private GraphicsDeviceService graphicsService;
-        ServiceContainer services = new ServiceContainer();
+        private ServiceContainer services = new ServiceContainer();
 
         private bool applicationHasFocus = false;
         private bool mouseInWindow = false;
@@ -39,6 +40,11 @@
         private int capturedMouseClientX;
         private int capturedMouseClientY;
         private HwndMouseState mouseState = new HwndMouseState();
+
+        private Stopwatch timer = new Stopwatch();
+
+        Microsoft.Xna.Framework.Input.MouseState mouseState;
+        Microsoft.Xna.Framework.Input.KeyboardState keyboardState;
 
         #endregion
 
@@ -55,15 +61,6 @@
         public event EventHandler<HwndMouseEventArgs> HwndMouseEnter;
         public event EventHandler<HwndMouseEventArgs> HwndMouseLeave;
 
-        public event EventHandler<HwndMouseEventArgs> HwndMouseLButtonDown;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseLButtonUp;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseLButtonDblClick;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseRButtonDown;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseRButtonUp;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseRButtonDblClick;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseMButtonDown;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseMButtonUp;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseMButtonDblClick;
         public event EventHandler<HwndMouseEventArgs> HwndMouseX1ButtonDown;
         public event EventHandler<HwndMouseEventArgs> HwndMouseX1ButtonUp;
         public event EventHandler<HwndMouseEventArgs> HwndMouseX1ButtonDblClick;
@@ -144,7 +141,12 @@
 
         }
 
-        protected virtual void Draw()
+        protected virtual void Update(float elapsedTime)
+        {
+
+        }
+
+        protected virtual void Draw(float elapsedTime)
         {
 
         }
@@ -172,12 +174,14 @@
 
             Viewport viewport = new Viewport(0, 0, width, height);
             graphicsService.GraphicsDevice.Viewport = viewport;
-
-            Draw();
+            
+            Update((float)timer.Elapsed.TotalSeconds);
+            Draw((float)timer.Elapsed.TotalSeconds);
             if (OnDraw != null)
                 OnDraw(this, new GraphicsDeviceEventArgs(graphicsService.GraphicsDevice));
 
             graphicsService.GraphicsDevice.Present(viewport.Bounds, null, hWnd);
+            timer.Restart();
         }
 
         void XnaWindowHost_Loaded(object sender, RoutedEventArgs e)
@@ -190,6 +194,7 @@
                 LoadContent();
                 if (OnLoadContent != null)
                     OnLoadContent(this, new GraphicsDeviceEventArgs(graphicsService.GraphicsDevice));
+                timer.Start();
             }
         }
 
@@ -237,12 +242,6 @@
 
             // Fire any events
             HwndMouseEventArgs args = new HwndMouseEventArgs(mouseState);
-            if (fireL && HwndMouseLButtonUp != null)
-                HwndMouseLButtonUp(this, args);
-            if (fireM && HwndMouseMButtonUp != null)
-                HwndMouseMButtonUp(this, args);
-            if (fireR && HwndMouseRButtonUp != null)
-                HwndMouseRButtonUp(this, args);
             if (fireX1 && HwndMouseX1ButtonUp != null)
                 HwndMouseX1ButtonUp(this, args);
             if (fireX2 && HwndMouseX2ButtonUp != null)
@@ -338,22 +337,16 @@
                     mouseState.LeftButton = MouseButtonState.Pressed;
                     if (HwndMouseDown != null)
                         HwndMouseDown(this, new HwndMouseEventArgs(mouseState));
-                    if (HwndMouseLButtonDown != null)
-                        HwndMouseLButtonDown(this, new HwndMouseEventArgs(mouseState));
                     break;
                 case NativeMethods.WM_RBUTTONDOWN:
                     mouseState.RightButton = MouseButtonState.Pressed;
                     if (HwndMouseDown != null)
                         HwndMouseDown(this, new HwndMouseEventArgs(mouseState));
-                    if (HwndMouseRButtonDown != null)
-                        HwndMouseRButtonDown(this, new HwndMouseEventArgs(mouseState));
                     break;
                 case NativeMethods.WM_MBUTTONDOWN:
                     mouseState.MiddleButton = MouseButtonState.Pressed;
                     if (HwndMouseDown != null)
                         HwndMouseDown(this, new HwndMouseEventArgs(mouseState));
-                    if (HwndMouseMButtonDown != null)
-                        HwndMouseMButtonDown(this, new HwndMouseEventArgs(mouseState));
                     break;
                 #endregion
 
@@ -362,22 +355,16 @@
                     mouseState.LeftButton = MouseButtonState.Released;
                     if (HwndMouseUp != null)
                         HwndMouseUp(this, new HwndMouseEventArgs(mouseState));
-                    if (HwndMouseLButtonUp != null)
-                        HwndMouseLButtonUp(this, new HwndMouseEventArgs(mouseState));
                     break;
                 case NativeMethods.WM_RBUTTONUP:
                     mouseState.RightButton = MouseButtonState.Released;
                     if (HwndMouseUp != null)
                         HwndMouseUp(this, new HwndMouseEventArgs(mouseState));
-                    if (HwndMouseRButtonUp != null)
-                        HwndMouseRButtonUp(this, new HwndMouseEventArgs(mouseState));
                     break;
                 case NativeMethods.WM_MBUTTONUP:
                     mouseState.MiddleButton = MouseButtonState.Released;
                     if (HwndMouseUp != null)
                         HwndMouseUp(this, new HwndMouseEventArgs(mouseState));
-                    if (HwndMouseMButtonUp != null)
-                        HwndMouseMButtonUp(this, new HwndMouseEventArgs(mouseState));
                     break;
                 #endregion
 
@@ -385,20 +372,14 @@
                 case NativeMethods.WM_LBUTTONDBLCLK:
                     if (HwndMouseDblClick != null)
                         HwndMouseDblClick(this, new HwndMouseEventArgs(mouseState, MouseButton.Left));
-                    if (HwndMouseLButtonDblClick != null)
-                        HwndMouseLButtonDblClick(this, new HwndMouseEventArgs(mouseState, MouseButton.Left));
                     break;
                 case NativeMethods.WM_RBUTTONDBLCLK:
                     if (HwndMouseDblClick != null)
                         HwndMouseDblClick(this, new HwndMouseEventArgs(mouseState, MouseButton.Right));
-                    if (HwndMouseRButtonDblClick != null)
-                        HwndMouseRButtonDblClick(this, new HwndMouseEventArgs(mouseState, MouseButton.Right));
                     break;
                 case NativeMethods.WM_MBUTTONDBLCLK:
                     if (HwndMouseDblClick != null)
                         HwndMouseDblClick(this, new HwndMouseEventArgs(mouseState, MouseButton.Middle));
-                    if (HwndMouseMButtonDblClick != null)
-                        HwndMouseMButtonDblClick(this, new HwndMouseEventArgs(mouseState, MouseButton.Middle));
                     break;
                 #endregion
 

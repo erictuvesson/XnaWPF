@@ -1,5 +1,6 @@
 ﻿namespace XnaWPF.Content
 {
+    using System.IO;
     using Microsoft.Xna.Framework.Content;
     using Microsoft.Xna.Framework.Graphics;
 
@@ -10,12 +11,12 @@
         public static bool TryLoad<T>(this ContentBuilder builder, ContentManager content, string importer, string processor, string file, out T value)
         {
             builder.Clear();
-            builder.Add(file, "temp", importer, processor);
+            builder.Add(file, Path.GetFileName(file), importer, processor);
 
             string buildError = builder.Build();
             if (string.IsNullOrEmpty(buildError))
             {
-                value = content.Load<T>("temp");
+                value = content.Load<T>(Path.GetFileName(file));
                 return true;
             }
             value = default(T);
@@ -62,12 +63,12 @@
         private static T BuildNLoad<T>(ContentBuilder builder, ContentManager content, string file, string processor, string importer)
         {
             builder.Clear();
-            builder.Add(file, "temp", importer, processor);
+            builder.Add(file, Path.GetFileName(file), importer, processor);
 
             string buildError = builder.Build();
             if (string.IsNullOrEmpty(buildError))
             {
-                return content.Load<T>("temp");
+                return content.Load<T>(Path.GetFileName(file));
             }
             throw new System.NullReferenceException(buildError);
         }

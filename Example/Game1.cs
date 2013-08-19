@@ -12,12 +12,19 @@ namespace Example
 {
     public class Game1 : XnaWPF.GraphicsDeviceControl
     {
+        public Color Color = Color.White;
+        public Vector2 Position = new Vector2();
+
         ContentBuilder contentBuilder;
         ContentManager contentManager;
 
         SpriteBatch spriteBatch;
         Texture2D texture;
-        Vector2 position;
+
+        public Game1()
+        {
+
+        }
 
         protected override void LoadContent()
         {
@@ -34,15 +41,22 @@ namespace Example
             {
                 System.Windows.MessageBox.Show(error.Message);
             }
-
-            position = new Vector2();
         }
 
-        protected override void Draw()
+        protected override void Update(float elapsedTime)
         {
+
+        }
+
+        protected override void Draw(float elapsedTime)
+        {
+            // Should I make this compatible?
+            // var keyState = Microsoft.Xna.Framework.Input.Keyboard.GetState();
+            // var mouseState = Microsoft.Xna.Framework.Input.Mouse.GetState();
+
             GraphicsDevice.Clear(Color.CornflowerBlue);
             spriteBatch.Begin();
-            spriteBatch.Draw(texture, new Microsoft.Xna.Framework.Rectangle((int)position.X, (int)position.Y, 200, 100), Color.White);
+            spriteBatch.Draw(texture, Position, Color);
             spriteBatch.End();
         }
 
@@ -52,16 +66,28 @@ namespace Example
             float speed = 10;
 
             if (e.Key == Key.W)
-                position.Y -= speed;
+                Position.Y -= speed;
             else if (e.Key == Key.S)
-                position.Y += speed;
+                Position.Y += speed;
 
             if (e.Key == Key.A)
-                position.X -= speed;
+                Position.X -= speed;
             else if (e.Key == Key.D)
-                position.X += speed;
+                Position.X += speed;
 
             base.OnKeyDown(e);
+        }
+
+        public void ChangeTexture(string filePath)
+        {
+            try
+            {
+                texture = contentBuilder.Load<Texture2D>(contentManager, filePath);
+            }
+            catch (Exception error)
+            {
+                System.Windows.MessageBox.Show(error.Message);
+            }
         }
     }
 }
