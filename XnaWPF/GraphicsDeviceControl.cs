@@ -9,6 +9,7 @@
     using System.Windows.Interop;
     using System.Windows.Media;
     using Microsoft.Xna.Framework.Graphics;
+    using Microsoft.Xna.Framework.Input;
 
     public class GraphicsDeviceControl : HwndHost
     {
@@ -39,12 +40,11 @@
         private int capturedMouseY;
         private int capturedMouseClientX;
         private int capturedMouseClientY;
-        private HwndMouseState mouseState = new HwndMouseState();
 
         private Stopwatch timer = new Stopwatch();
 
-        Microsoft.Xna.Framework.Input.MouseState mouseState;
-        Microsoft.Xna.Framework.Input.KeyboardState keyboardState;
+        private MouseState mouseState;
+        private KeyboardState keyboardState;
 
         #endregion
 
@@ -53,26 +53,9 @@
         public event EventHandler<GraphicsDeviceEventArgs> OnLoadContent;
         public event EventHandler<GraphicsDeviceEventArgs> OnDraw;
 
-        // TODO: X1 & X2 is not counted in MouseDown/Up
-        public event EventHandler<HwndMouseEventArgs> HwndMouseDown;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseUp;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseDblClick;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseMove;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseEnter;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseLeave;
-
-        public event EventHandler<HwndMouseEventArgs> HwndMouseX1ButtonDown;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseX1ButtonUp;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseX1ButtonDblClick;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseX2ButtonDown;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseX2ButtonUp;
-        public event EventHandler<HwndMouseEventArgs> HwndMouseX2ButtonDblClick;
-
-        public event EventHandler<HwndKeyEventArgs> HwndKeyDown;
-        public event EventHandler<HwndKeyEventArgs> HwndKeyUp;
-
-        public event EventHandler<KeyEventArgs> xKeyDown;
-        public event EventHandler<KeyEventArgs> xKeyUp;
+        public event EventHandler<MouseEventArgs> HwndMouseMove;
+        public event EventHandler<MouseEventArgs> HwndMouseEnter;
+        public event EventHandler<MouseEventArgs> HwndMouseLeave;
 
         #endregion
 
@@ -80,6 +63,9 @@
 
         public GraphicsDeviceControl()
         {
+            mouseState = new MouseState();
+            keyboardState = new KeyboardState();
+
             Loaded += new RoutedEventHandler(XnaWindowHost_Loaded);
             SizeChanged += new SizeChangedEventHandler(XnaWindowHost_SizeChanged);
 
@@ -132,6 +118,18 @@
             isMouseCaptured = false;
         }
 
+        [Obsolete()]
+        public Microsoft.Xna.Framework.Input.MouseState GetMouseState()
+        {
+            return mouseState.GetXnaState();
+        }
+
+        [Obsolete()]
+        public KeyboardState GetKeyboardState()
+        {
+            return keyboardState;
+        }
+
         #endregion
 
         #region Virtual Methods
@@ -151,6 +149,16 @@
 
         }
 
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+        }
+
+        protected override void OnKeyUp(KeyEventArgs e)
+        {
+            base.OnKeyUp(e);
+        }
+
         #endregion
 
         #region Graphics Device Control Implementation
@@ -158,8 +166,8 @@
         void CompositionTarget_Rendering(object sender, EventArgs e)
         {
             if (isMouseCaptured &&
-                (int)mouseState.Position.X != capturedMouseX &&
-                (int)mouseState.Position.Y != capturedMouseY)
+                mouseState.X != capturedMouseX &&
+                mouseState.Y != capturedMouseY)
             {
                 NativeMethods.SetCursorPos(capturedMouseX, capturedMouseY);
                 mouseState.Position = mouseState.PreviousPosition = new Point(capturedMouseClientX, capturedMouseClientY);
@@ -218,7 +226,7 @@
             {
                 mouseInWindow = false;
                 if (HwndMouseLeave != null)
-                    HwndMouseLeave(this, new HwndMouseEventArgs(mouseState));
+                    HwndMouseLeave(this, new MouseEventArgs(mouseState.GetXnaState()));
             }
 
             ReleaseMouseCapture();
@@ -226,27 +234,19 @@
 
         private void ResetMouseState()
         {
-            // We need to invoke events for any buttons that were pressed
-            bool fireL = mouseState.LeftButton == MouseButtonState.Pressed;
-            bool fireM = mouseState.MiddleButton == MouseButtonState.Pressed;
-            bool fireR = mouseState.RightButton == MouseButtonState.Pressed;
-            bool fireX1 = mouseState.X1Button == MouseButtonState.Pressed;
-            bool fireX2 = mouseState.X2Button == MouseButtonState.Pressed;
+            bool fireL = (mouseState.LeftButton == ButtonState.Pressed);
+            bool fireM = (mouseState.MiddleButton == ButtonState.Pressed);
+            bool fireR = (mouseState.RightButton == ButtonState.Pressed);
+            bool fireX1 = (mouseState.XButton1 == ButtonState.Pressed);
+            bool fireX2 = (mouseState.XButton2 == ButtonState.Pressed);
 
-            // Update the state of all of the buttons
-            mouseState.LeftButton = MouseButtonState.Released;
-            mouseState.MiddleButton = MouseButtonState.Released;
-            mouseState.RightButton = MouseButtonState.Released;
-            mouseState.X1Button = MouseButtonState.Released;
-            mouseState.X2Button = MouseButtonState.Released;
+            mouseState.LeftButton = ButtonState.Released;
+            mouseState.MiddleButton = ButtonState.Released;
+            mouseState.RightButton = ButtonState.Released;
+            mouseState.XButton1 = ButtonState.Released;
+            mouseState.XButton2 = ButtonState.Released;
 
-            // Fire any events
-            HwndMouseEventArgs args = new HwndMouseEventArgs(mouseState);
-            if (fireX1 && HwndMouseX1ButtonUp != null)
-                HwndMouseX1ButtonUp(this, args);
-            if (fireX2 && HwndMouseX2ButtonUp != null)
-                HwndMouseX2ButtonUp(this, args);
-            // The mouse is no longer considered to be in our window
+            // TODO: Trigger events
             mouseInWindow = false;
         }
 
@@ -259,32 +259,38 @@
             return (NativeMethods.SetFocus(hWnd) != hWnd);
         }
 
-        protected override void OnKeyDown(KeyEventArgs e)
+        protected override bool HasFocusWithinCore()
         {
-            if (xKeyDown != null)
-                xKeyDown(this, e);
-            base.OnKeyDown(e);
+            return HwndIsFocused;
         }
-        protected override void OnKeyUp(KeyEventArgs e)
-        {
-            if (xKeyUp != null)
-                xKeyUp(this, e);
-            base.OnKeyUp(e);
-        }
-        
+
         protected override bool TranslateAcceleratorCore(ref MSG msg, ModifierKeys modifiers)
         {
             if (msg.message == NativeMethods.WM_KEYDOWN)
             {
-                var keyDown = (Key)KeyInterop.KeyFromVirtualKey(msg.wParam.ToInt32());
-                if (HwndKeyDown != null)
-                    HwndKeyDown(this, new HwndKeyEventArgs(keyDown, modifiers));
+                var key = (Key)KeyInterop.KeyFromVirtualKey(msg.wParam.ToInt32());
+                keyboardState.keysDown[key] = true;
             }
             else if (msg.message == NativeMethods.WM_KEYDOWN)
             {
-                var keyUp = (Key)KeyInterop.KeyFromVirtualKey(msg.wParam.ToInt32());
-                if (HwndKeyUp != null)
-                    HwndKeyUp(this, new HwndKeyEventArgs(keyUp, modifiers));
+                var key = (Key)KeyInterop.KeyFromVirtualKey(msg.wParam.ToInt32());
+                keyboardState.keysDown[key] = false;
+            }
+
+            if (msg.message == NativeMethods.WM_XBUTTONDOWN)
+            {
+                if (((int)msg.wParam & NativeMethods.MK_XBUTTON1) != 0)
+                {
+                    mouseState.XButton1 = ButtonState.Released;
+                    //if (HwndMouseX1ButtonUp != null)
+                    //    HwndMouseX1ButtonUp(this, new HwndMouseEventArgs(mouseState));
+                }
+                else if (((int)msg.wParam & NativeMethods.MK_XBUTTON2) != 0)
+                {
+                    mouseState.XButton2 = ButtonState.Released;
+                    //if (HwndMouseX2ButtonUp != null)
+                    //    HwndMouseX2ButtonUp(this, new HwndMouseEventArgs(mouseState));
+                }
             }
             return base.TranslateAcceleratorCore(ref msg, modifiers);
         }
@@ -326,107 +332,10 @@
 
         #endregion
 
-        #region WndProc Implementation
-
         protected override IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             switch (msg)
             {
-                #region MouseDown
-                case NativeMethods.WM_LBUTTONDOWN:
-                    mouseState.LeftButton = MouseButtonState.Pressed;
-                    if (HwndMouseDown != null)
-                        HwndMouseDown(this, new HwndMouseEventArgs(mouseState));
-                    break;
-                case NativeMethods.WM_RBUTTONDOWN:
-                    mouseState.RightButton = MouseButtonState.Pressed;
-                    if (HwndMouseDown != null)
-                        HwndMouseDown(this, new HwndMouseEventArgs(mouseState));
-                    break;
-                case NativeMethods.WM_MBUTTONDOWN:
-                    mouseState.MiddleButton = MouseButtonState.Pressed;
-                    if (HwndMouseDown != null)
-                        HwndMouseDown(this, new HwndMouseEventArgs(mouseState));
-                    break;
-                #endregion
-
-                #region MouseUp
-                case NativeMethods.WM_LBUTTONUP:
-                    mouseState.LeftButton = MouseButtonState.Released;
-                    if (HwndMouseUp != null)
-                        HwndMouseUp(this, new HwndMouseEventArgs(mouseState));
-                    break;
-                case NativeMethods.WM_RBUTTONUP:
-                    mouseState.RightButton = MouseButtonState.Released;
-                    if (HwndMouseUp != null)
-                        HwndMouseUp(this, new HwndMouseEventArgs(mouseState));
-                    break;
-                case NativeMethods.WM_MBUTTONUP:
-                    mouseState.MiddleButton = MouseButtonState.Released;
-                    if (HwndMouseUp != null)
-                        HwndMouseUp(this, new HwndMouseEventArgs(mouseState));
-                    break;
-                #endregion
-
-                #region MouseDblClick
-                case NativeMethods.WM_LBUTTONDBLCLK:
-                    if (HwndMouseDblClick != null)
-                        HwndMouseDblClick(this, new HwndMouseEventArgs(mouseState, MouseButton.Left));
-                    break;
-                case NativeMethods.WM_RBUTTONDBLCLK:
-                    if (HwndMouseDblClick != null)
-                        HwndMouseDblClick(this, new HwndMouseEventArgs(mouseState, MouseButton.Right));
-                    break;
-                case NativeMethods.WM_MBUTTONDBLCLK:
-                    if (HwndMouseDblClick != null)
-                        HwndMouseDblClick(this, new HwndMouseEventArgs(mouseState, MouseButton.Middle));
-                    break;
-                #endregion
-
-                #region X1 & X2
-                case NativeMethods.WM_XBUTTONDOWN:
-                    if (((int)wParam & NativeMethods.MK_XBUTTON1) != 0)
-                    {
-                        mouseState.X1Button = MouseButtonState.Pressed;
-                        if (HwndMouseX1ButtonDown != null)
-                            HwndMouseX1ButtonDown(this, new HwndMouseEventArgs(mouseState));
-                    }
-                    else if (((int)wParam & NativeMethods.MK_XBUTTON2) != 0)
-                    {
-                        mouseState.X2Button = MouseButtonState.Pressed;
-                        if (HwndMouseX2ButtonDown != null)
-                            HwndMouseX2ButtonDown(this, new HwndMouseEventArgs(mouseState));
-                    }
-                    break;
-                case NativeMethods.WM_XBUTTONUP:
-                    if (((int)wParam & NativeMethods.MK_XBUTTON1) != 0)
-                    {
-                        mouseState.X1Button = MouseButtonState.Released;
-                        if (HwndMouseX1ButtonUp != null)
-                            HwndMouseX1ButtonUp(this, new HwndMouseEventArgs(mouseState));
-                    }
-                    else if (((int)wParam & NativeMethods.MK_XBUTTON2) != 0)
-                    {
-                        mouseState.X2Button = MouseButtonState.Released;
-                        if (HwndMouseX2ButtonUp != null)
-                            HwndMouseX2ButtonUp(this, new HwndMouseEventArgs(mouseState));
-                    }
-                    break;
-                case NativeMethods.WM_XBUTTONDBLCLK:
-                    if (((int)wParam & NativeMethods.MK_XBUTTON1) != 0)
-                    {
-                        if (HwndMouseX1ButtonDblClick != null)
-                            HwndMouseX1ButtonDblClick(this, new HwndMouseEventArgs(mouseState, MouseButton.XButton1));
-                    }
-                    else if (((int)wParam & NativeMethods.MK_XBUTTON2) != 0)
-                    {
-                        if (HwndMouseX2ButtonDblClick != null)
-                            HwndMouseX2ButtonDblClick(this, new HwndMouseEventArgs(mouseState, MouseButton.XButton2));
-                    }
-                    break;
-                #endregion
-
-                #region Mouse Move etc
                 case NativeMethods.WM_MOUSEMOVE:
                     if (!applicationHasFocus)
                         break;
@@ -442,7 +351,7 @@
                         mouseState.PreviousPosition = mouseState.Position;
 
                         if (HwndMouseEnter != null)
-                            HwndMouseEnter(this, new HwndMouseEventArgs(mouseState));
+                            HwndMouseEnter(this, new MouseEventArgs(mouseState.GetXnaState()));
 
                         NativeMethods.TRACKMOUSEEVENT tme = new NativeMethods.TRACKMOUSEEVENT();
                         tme.cbSize = Marshal.SizeOf(typeof(NativeMethods.TRACKMOUSEEVENT));
@@ -454,7 +363,7 @@
                     if (mouseState.Position != mouseState.PreviousPosition)
                     {
                         if (HwndMouseMove != null)
-                            HwndMouseMove(this, new HwndMouseEventArgs(mouseState));
+                            HwndMouseMove(this, new MouseEventArgs(mouseState.GetXnaState()));
                     }
 
                     break;
@@ -465,23 +374,15 @@
                     ResetMouseState();
 
                     if (HwndMouseLeave != null)
-                        HwndMouseLeave(this, new HwndMouseEventArgs(mouseState));
-                    break;
-                #endregion
-
-                #region Key
-                case NativeMethods.WM_KEYDOWN:
-                    //var keyDown = (Key)KeyInterop.KeyFromVirtualKey(wParam.ToInt32());
-                    //if (HwndKeyDown != null)
-                    //    HwndKeyDown(this, new HwndKeyEventArgs(keyDown));
+                        HwndMouseLeave(this, new MouseEventArgs(mouseState.GetXnaState()));
                     break;
 
-                case NativeMethods.WM_KEYUP:
-                    //var keyUp = (Key)KeyInterop.KeyFromVirtualKey(wParam.ToInt32());
-                    //if (HwndKeyUp != null)
-                    //    HwndKeyUp(this, new HwndKeyEventArgs(keyUp));
-                    break;
-                #endregion
+                case NativeMethods.WM_LBUTTONDOWN: TestMouseButtonDown(MouseButton.Left); break;
+                case NativeMethods.WM_MBUTTONDOWN: TestMouseButtonDown(MouseButton.Middle); break;
+                case NativeMethods.WM_RBUTTONDOWN: TestMouseButtonDown(MouseButton.Right); break;
+                case NativeMethods.WM_LBUTTONUP: TestMouseButtonUp(MouseButton.Left);  break;
+                case NativeMethods.WM_MBUTTONUP: TestMouseButtonUp(MouseButton.Middle); break;
+                case NativeMethods.WM_RBUTTONUP: TestMouseButtonUp(MouseButton.Right); break;
 
                 default:
                     break;
@@ -490,6 +391,7 @@
             return base.WndProc(hwnd, msg, wParam, lParam, ref handled);
         }
 
-        #endregion
+        protected virtual void TestMouseButtonDown(MouseButton button) { }
+        protected virtual void TestMouseButtonUp(MouseButton button) { }
     }
 }

@@ -11,6 +11,7 @@ namespace XnaWPF
         #region Constants
 
         // http://msdn.microsoft.com/en-us/library/windows/desktop/ff700542(v=vs.85).aspx
+        // http://msdn.microsoft.com/en-us/library/windows/desktop/ff468877(v=vs.85).aspx
 
         public const int WS_CHILD           = 0x40000000;
         public const int WS_VISIBLE         = 0x10000000;

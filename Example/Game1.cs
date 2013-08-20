@@ -23,7 +23,20 @@ namespace Example
 
         public Game1()
         {
+            // Key.Left and Key.Right, changes focus
+            // All keyboard events are working!
 
+            HwndMouseEnter += (s, e) => System.Diagnostics.Debug.WriteLine("MouseEnter");
+            HwndMouseLeave += (s, e) => System.Diagnostics.Debug.WriteLine("MouseLeave");
+
+            MouseEnter += (s, e) => System.Diagnostics.Debug.WriteLine("MouseEnterTest");
+            MouseLeave += (s, e) => System.Diagnostics.Debug.WriteLine("MouseLeaveTest");
+        }
+
+        protected override void TestMouseButtonDown(MouseButton button)
+        {
+            if (!this.IsFocused) Focus();
+            System.Diagnostics.Debug.WriteLine("TestMouseButtonDown");
         }
 
         protected override void LoadContent()
@@ -45,24 +58,21 @@ namespace Example
 
         protected override void Update(float elapsedTime)
         {
-
+            // This would just get the global key events... unless it turns all keys to false when not focusing, or should I just return null if control is not focused? :/
+            // var mouseState = GetMouseState();
+            // var keyState = GetKeyboardState();
         }
 
         protected override void Draw(float elapsedTime)
         {
-            // Should I make this compatible?
-            // var keyState = Microsoft.Xna.Framework.Input.Keyboard.GetState();
-            // var mouseState = Microsoft.Xna.Framework.Input.Mouse.GetState();
-
             GraphicsDevice.Clear(Color.CornflowerBlue);
             spriteBatch.Begin();
             spriteBatch.Draw(texture, Position, Color);
             spriteBatch.End();
         }
 
-        protected override void OnKeyDown(System.Windows.Input.KeyEventArgs e)
+        protected override void OnKeyDown(KeyEventArgs e)
         {
-            // Key.Left and Key.Right, changes focus
             float speed = 10;
 
             if (e.Key == Key.W)
